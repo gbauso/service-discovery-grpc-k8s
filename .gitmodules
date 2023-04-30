@@ -1,0 +1,3 @@
+[submodule "discovery-service/contract"]
+	path = discovery-service/contract
+	url = https://github.com/gbauso/contract
