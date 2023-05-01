@@ -50,7 +50,7 @@ func main() {
 		panic(err)
 	}
 
-	var repo abstraction.ServiceHandlerRepository := repository.NewServiceHandlerRepository(db, context.Background())
+	var repo abstraction.ServiceHandlerRepository = repository.NewServiceHandlerRepository(db, context.Background())
 
 	server := server.NewServer(repo)
 
