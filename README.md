@@ -4,7 +4,7 @@
 This project is an implementation of [Client-Side Discovery Pattern](https://microservices.io/patterns/client-side-discovery.html) intended to use in gRPC projects together Kubernetes (using sidecar pattern).
 
 ### Discovery Service  
-![discovery](./docs/discovery_service_sequence_diagram.svg)
+![discovery](./docs/service_discovery_sequence_diagram.svg)
 
 ## Stack
 
