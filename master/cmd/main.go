@@ -8,6 +8,9 @@ import (
 	"io"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	logger "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -36,8 +39,7 @@ func main() {
 	fileName := fmt.Sprintf(*logPath, id)
 	f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		log.Errorf("error opening file: %v", err)
-		panic(err)
+		log.Fatalf("error opening file: %v", err)
 	}
 	defer f.Close()
 	wrt := io.MultiWriter(os.Stdout, f)
@@ -46,8 +48,7 @@ func main() {
 
 	db, err := sql.Open("sqlite3", *databasePath)
 	if err != nil {
-		log.Errorf("error opening database: %v", err)
-		panic(err)
+		log.Fatalf("error opening database: %v", err)
 	}
 
 	var repo abstraction.ServiceHandlerRepository = repository.NewServiceHandlerRepository(db, context.Background())
@@ -56,8 +57,7 @@ func main() {
 
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
 	if err != nil {
-		log.Errorf("failed to listen")
-		panic(err)
+		log.Fatalf("failed to listen: %v", err)
 	}
 
 	loggingInterceptor := interceptors.NewLoggingInterceptor(log)
@@ -66,6 +66,20 @@ func main() {
 	pb.RegisterDiscoveryServiceServer(s, server)
 	reflection.Register(s)
 
-	log.Infof("server listenning on 0.0.0.0:%d", port)
-	s.Serve(lis)
+	go func() {
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+		log.Infof("server listenning on 0.0.0.0:%d", port)
+	}()
+
+	// Wait for a signal
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	<-sigCh
+
+	// Stop the server gracefully
+	s.GracefulStop()
+
+	time.Sleep(time.Second)
 }
