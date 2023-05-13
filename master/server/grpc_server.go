@@ -8,16 +8,16 @@ import (
 	repository "github.com/gbauso/service-discovery-grpc-k8s/master/repository/interface"
 )
 
-type Server struct {
+type server struct {
 	pb.UnimplementedDiscoveryServiceServer
 	repo repository.ServiceHandlerRepository
 }
 
-func NewServer(repo repository.ServiceHandlerRepository) *Server {
-	return &Server{repo: repo}
+func NewServer(repo repository.ServiceHandlerRepository) *server {
+	return &server{repo: repo}
 }
 
-func (s *Server) RegisterServiceHandlers(ctx context.Context, in *pb.RegisterServiceHandlersRequest) (*pb.RegisterServiceHandlersResponse, error) {
+func (s *server) RegisterServiceHandlers(ctx context.Context, in *pb.RegisterServiceHandlersRequest) (*pb.RegisterServiceHandlersResponse, error) {
 	var serviceHandlers []entity.ServiceHandler
 	for _, handler := range in.Handlers {
 		serviceHandler := entity.NewServiceHandler(in.Service, in.ServiceId, handler)
@@ -32,7 +32,7 @@ func (s *Server) RegisterServiceHandlers(ctx context.Context, in *pb.RegisterSer
 	return &pb.RegisterServiceHandlersResponse{}, nil
 }
 
-func (s *Server) GetServiceHandlers(ctx context.Context, in *pb.DiscoverySearchRequest) (*pb.DiscoverySearchResponse, error) {
+func (s *server) GetServiceHandlers(ctx context.Context, in *pb.DiscoverySearchRequest) (*pb.DiscoverySearchResponse, error) {
 	services, err := s.repo.GetAliveServices(in.ServiceDefinition)
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func (s *Server) GetServiceHandlers(ctx context.Context, in *pb.DiscoverySearchR
 	return &pb.DiscoverySearchResponse{Services: services}, nil
 }
 
-func (s *Server) UnregisterService(ctx context.Context, in *pb.UnregisterServiceRequest) (*pb.UnregisterServiceResponse, error) {
+func (s *server) UnregisterService(ctx context.Context, in *pb.UnregisterServiceRequest) (*pb.UnregisterServiceResponse, error) {
 	queryResult, err := s.repo.GetByServiceId(in.ServiceId)
 	if err != nil {
 		return nil, err

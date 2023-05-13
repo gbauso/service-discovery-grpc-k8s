@@ -1,0 +1,23 @@
+version: '3.5'
+services:
+  discovery-master: 
+    build: 
+      context: ./
+      dockerfile: Dockerfile.master
+    restart: always
+    ports:
+      -  5000:5000
+    environment:
+      - LOG_PATH=discovery-master-%s.log
+      - PORT=5000
+      - DB_PATH=/app/master/database/sqlite.db
+
+  integration-tests:
+    image: golang:alpine
+    depends_on: 
+      - discovery-master
+    environment:
+      - MASTER_URL=discovery-master:5000
+    volumes:
+      - .:/app
+    command: sh -c "cd /app/tests && CGO=0 go test -v -tags=integration" 
