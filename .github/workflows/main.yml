@@ -47,7 +47,7 @@ jobs:
         with:
           go-version: 1.18.x
 
-      - name: test_code
+      - name: Unit tests
         run: go test -v -tags=unit ./... -cover -coverprofile=coverage.out
 
       - name: send_to_codecov
@@ -58,7 +58,7 @@ jobs:
           name: grpc_microservices
           verbose: true
 
-      - name: integration_test
+      - name: Integration tests
         run: docker-compose run master-integration
 
       # Docker

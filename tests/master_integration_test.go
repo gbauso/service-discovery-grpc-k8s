@@ -65,4 +65,6 @@ func TestDiscoveryService(t *testing.T) {
 	if len(afterUnegister.Services) != 0 {
 		t.Errorf("Unexpected number of services: got %d, want 0", len(afterUnegister.Services))
 	}
+
+	t.Logf("Master Test Passed")
 }
