@@ -59,7 +59,7 @@ jobs:
           verbose: true
 
       - name: Integration tests
-        run: docker-compose run master-integration
+        run: docker-compose run integration-tests
 
       # Docker
 
