@@ -2,101 +2,97 @@ name: Service Discovery
 
 on:
   push:
-    branches: ['main']
-  pull_request: 
-  
+    branches: ["main"]
+  pull_request:
 
 jobs:
   build_deploy:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
 
-     - uses: actions/checkout@v3
-       with:
-        submodules: true
-        fetch-depth: 0
-    
-     - name: Set up QEMU
-       uses: docker/setup-qemu-action@v2
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
 
-     - name: Set up Docker Buildx
-       uses: docker/setup-buildx-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-     - name: Login to DockerHub
-       uses: docker/login-action@v2
-       with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-     - name: 'Install GitVersion'
-       uses: gittools/actions/gitversion/setup@v0.9.11
-       with:
-         versionSpec: '5.x'
+      - name: "Install GitVersion"
+        uses: gittools/actions/gitversion/setup@v0.9.11
+        with:
+          versionSpec: "5.x"
 
-     - uses: jwalton/gh-find-current-pr@v1
-       id: findPr
-       with:
-        state: all
+      - uses: jwalton/gh-find-current-pr@v1
+        id: findPr
+        with:
+          state: all
 
-     - name: determine_version
-       uses: gittools/actions/gitversion/execute@v0.9.11
-       id: gitversion
-       with:
-         useConfigFile: true
-         configFilePath: 'GitVersion.yml'
+      - name: determine_version
+        uses: gittools/actions/gitversion/execute@v0.9.11
+        id: gitversion
+        with:
+          useConfigFile: true
+          configFilePath: "GitVersion.yml"
 
-     - uses: actions/setup-go@v3
-       with:
-        go-version: 1.18.x
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.18.x
 
-     - name: test_code
-       run: go test ./... -cover -coverprofile=coverage.out
+      - name: test_code
+        run: go test ./... -cover -coverprofile=coverage.out
 
-     - name: send_to_codecov
-       uses: codecov/codecov-action@v2
-       with:
-        files: coverage.out
-        flags: discovery-service 
-        name: grpc_microservices 
-        verbose: true
+      - name: send_to_codecov
+        uses: codecov/codecov-action@v2
+        with:
+          files: coverage.out
+          flags: discovery-service
+          name: grpc_microservices
+          verbose: true
 
       - name: integration_test
         run: docker-compose run master-integration
 
-     # Docker
-     
-     - name: Get Docker Tags
-       id: docker_tags
-       run: |
-        MASTER_MAIN_TAG=msexp/discovery-service-master:${{ steps.gitversion.outputs.SemVer }}
-        AGENT_MAIN_TAG=msexp/discovery-service-agent:${{ steps.gitversion.outputs.SemVer }}
+      # Docker
 
-        if [ "$REF" == "pull_request" ];
-        then
-          echo "::set-output name=master_tag::$MASTER_MAIN_TAG"
-          echo "::set-output name=agent_tag::$AGENT_MAIN_TAG"
-        else
-          echo "::set-output name=master_tag::$MASTER_MAIN_TAG,msexp/discovery-service-master:latest"
-          echo "::set-output name=agent_tag::$AGENT_MAIN_TAG,msexp/discovery-service-agent:latest"
-        fi
+      - name: Get Docker Tags
+        id: docker_tags
+        run: |
+          MASTER_MAIN_TAG=msexp/discovery-service-master:${{ steps.gitversion.outputs.SemVer }}
+          AGENT_MAIN_TAG=msexp/discovery-service-agent:${{ steps.gitversion.outputs.SemVer }}
 
-        echo "::set-output name=master_main_tag::$MASTER_MAIN_TAG"
-        echo "::set-output name=agent_main_tag::$AGENT_MAIN_TAG"
-       env:
-         REF: ${{ github.event_name }}  
+          if [ "$REF" == "pull_request" ];
+          then
+            echo "::set-output name=master_tag::$MASTER_MAIN_TAG"
+            echo "::set-output name=agent_tag::$AGENT_MAIN_TAG"
+          else
+            echo "::set-output name=master_tag::$MASTER_MAIN_TAG,msexp/discovery-service-master:latest"
+            echo "::set-output name=agent_tag::$AGENT_MAIN_TAG,msexp/discovery-service-agent:latest"
+          fi
 
-     - name: Build and push agent 
-       uses: docker/build-push-action@v3
-       with:
-         file: Dockerfile.agent
-         push: true
-         tags: ${{ steps.docker_tags.outputs.agent_tag }}
+          echo "::set-output name=master_main_tag::$MASTER_MAIN_TAG"
+          echo "::set-output name=agent_main_tag::$AGENT_MAIN_TAG"
+        env:
+          REF: ${{ github.event_name }}
 
+      - name: Build and push agent
+        uses: docker/build-push-action@v3
+        with:
+          file: Dockerfile.agent
+          push: true
+          tags: ${{ steps.docker_tags.outputs.agent_tag }}
 
-     - name: Build and push master 
-       uses: docker/build-push-action@v3
-       with:
-         file: Dockerfile.master
-         push: true
-         tags: ${{ steps.docker_tags.outputs.master_tag }}
-    
+      - name: Build and push master
+        uses: docker/build-push-action@v3
+        with:
+          file: Dockerfile.master
+          push: true
+          tags: ${{ steps.docker_tags.outputs.master_tag }}
