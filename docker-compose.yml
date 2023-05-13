@@ -20,4 +20,4 @@ services:
       - MASTER_URL=discovery-master:5000
     volumes:
       - .:/app
-    command: sh -c "cd /app/tests && CGO=0 go test" 
+    command: sh -c "cd /app/tests && CGO=0 go test -tags=integration" 
